@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Specialized;
+using System.Text;
 using System.Web;
 
 namespace MotorTownDiscordBot.MotorTown
@@ -41,9 +43,38 @@ namespace MotorTownDiscordBot.MotorTown
             var query = HttpUtility.ParseQueryString(uriBuilder.Query);
             query.Add("password", password);
 
-            uriBuilder.Query = query.ToString();
+            uriBuilder.Query = toQS(query);
 
             request.RequestUri = uriBuilder.Uri;
+        }
+
+        private string toQS(NameValueCollection query)
+        {
+            if (query.Count == 0)
+            {
+                return "";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            string?[] keys = query.AllKeys;
+            for (int i = 0; i < query.Count; i++)
+            {
+                string? key = keys[i];
+                string[]? values = query.GetValues(key);
+                if (values != null)
+                {
+                    foreach (string value in values)
+                    {
+                        if (!string.IsNullOrEmpty(key))
+                        {
+                            sb.Append(key).Append('=');
+                        }
+                        sb.Append(Uri.EscapeDataString(value)).Append('&');
+                    }
+                }
+            }
+
+            return sb.Length > 0 ? sb.ToString(0, sb.Length - 1) : "";
         }
     }
 }
