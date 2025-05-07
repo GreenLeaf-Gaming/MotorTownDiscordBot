@@ -23,38 +23,52 @@ public abstract class GameEvent
 
     public static GameEvent? ParseLog(string line)
     {
-        string[] sections = line.Split(' ');
-
-        DateTime dateTime = DateTime.ParseExact(sections.ElementAt(0)!, "[yyyy.MM.dd-HH.mm.ss]", CultureInfo.InvariantCulture);
-
-        if (sections.ElementAt(1) == "[CHAT]")
+        try
         {
-            string player = sections.ElementAt(2);
-            string playerId = sections.ElementAt(3).TrimEnd(':').TrimStart('(').TrimEnd(')');
-            string message = String.Join(" ", sections.Skip(4)).TrimEnd('\n');
-            return new ChatMessageEvent(line, dateTime, player, playerId, message);
+            string[] sections = line.Split(' ');
+
+            DateTime dateTime = DateTime.ParseExact(sections.ElementAt(0)!, "[yyyy.MM.dd-HH.mm.ss]", CultureInfo.InvariantCulture);
+
+            if (sections.ElementAt(1) == "[CHAT]")
+            {
+
+                return parseChatMessage(line, sections, dateTime);
+            }
+
+            if (sections.ElementAt(1) == "Player"
+                && sections.ElementAt(2) == "Login:")
+            {
+                var playerId = sections.Last().Trim('(', ')');
+                return new SessionEvent(line, dateTime, sections.ElementAt(3), playerId, true);
+            }
+
+
+            if (sections.ElementAt(1) == "Player"
+                && sections.ElementAt(2) == "Logout:")
+            {
+                return new SessionEvent(line, dateTime, sections.ElementAt(3), "", false);
+            }
+
+            if (sections.ElementAt(1) == "[ADMIN]")
+            {
+                return new BanEvent(line, dateTime, sections.ElementAt(4), sections.ElementAt(2));
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
         }
 
-        if (sections.ElementAt(1) == "Player"
-            && sections.ElementAt(2) == "Login:")
-        {
-            var playerId = sections.Last().Trim('(', ')');
-            return new SessionEvent(line, dateTime, sections.ElementAt(3), playerId, true);
-        }
+    }
 
-
-        if (sections.ElementAt(1) == "Player"
-            && sections.ElementAt(2) == "Logout:")
-        {
-            return new SessionEvent(line, dateTime, sections.ElementAt(3), "", false);
-        }
-
-        if (sections.ElementAt(1) == "[ADMIN]")
-        {
-            return new BanEvent(line, dateTime, sections.ElementAt(4), sections.ElementAt(2));
-        }
-
-        return null;
+    private static GameEvent parseChatMessage(string line, string[] sections, DateTime dateTime)
+    {
+        string player = sections.ElementAt(2);
+        string playerId = sections.ElementAt(3).TrimEnd(':').TrimStart('(').TrimEnd(')');
+        string message = String.Join(" ", sections.Skip(4)).TrimEnd('\n');
+        return new ChatMessageEvent(line, dateTime, player, playerId, message);
     }
 }
 public class ChatMessageEvent : GameEvent
