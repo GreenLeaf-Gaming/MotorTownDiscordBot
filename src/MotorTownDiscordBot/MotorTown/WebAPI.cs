@@ -1,7 +1,16 @@
 ﻿using System.Net.Http.Json;
 
+
+
 namespace MotorTownDiscordBot.MotorTown
 {
+    public class BanOptions
+    {
+        public string? reason { get; set; }
+
+        public int? hours { get; set; }
+    }
+
     public class WebAPI
     {
         private int _port;
@@ -48,9 +57,25 @@ namespace MotorTownDiscordBot.MotorTown
             return result.succeeded;
         }
 
-        public async Task<bool> PlayerBan(string player_id)
+        public async Task<bool> PlayerBan(string player_id, BanOptions? options = null)
         {
-            HttpResponseMessage response = await _client.PostAsync($"/player/ban?unique_id={player_id}", null);
+            var queries = new List<string>();
+            queries.Add($"unique_id={player_id}");
+
+            if (options?.hours != null && options.hours > 0)
+            {
+                queries.Add($"hours={options.hours}");
+            }
+
+            if (options?.reason != null && options.reason.Length > 0)
+            {
+                queries.Add($"reason={Uri.EscapeDataString(options.reason)}");
+            }
+
+            string QS = String.Join('&', queries.ToArray());
+
+
+            HttpResponseMessage response = await _client.PostAsync($"/player/ban?{QS}", null);
             var result = await GetResult<object>(response);
 
             return result.succeeded;
