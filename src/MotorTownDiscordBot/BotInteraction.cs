@@ -26,18 +26,20 @@ public class BotInteraction
         var kickCommand = new SlashCommandBuilder();
         kickCommand.WithName("kick");
         kickCommand.WithDescription("Kick player on the server");
-        kickCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player name on the server");
+        kickCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player id on the server", true);
         kickCommand.WithContextTypes([InteractionContextType.Guild]);
 
         var banCommand = new SlashCommandBuilder();
         banCommand.WithName("ban");
         banCommand.WithDescription("Ban player on the server");
-        banCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player name on the server");
+        banCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player id on the server", true);
+        banCommand.AddOption("reason", ApplicationCommandOptionType.String, "Ban reason", false);
+        banCommand.AddOption("hours", ApplicationCommandOptionType.Integer, "Hours for temp ban", false);
 
         var unbanCommand = new SlashCommandBuilder();
         unbanCommand.WithName("unban");
         unbanCommand.WithDescription("Unban player on the server");
-        unbanCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player name on the server");
+        unbanCommand.AddOption("player-id", ApplicationCommandOptionType.String, "Player id on the server", true);
 
         var playerListCommand = new SlashCommandBuilder();
         playerListCommand.WithName("player-list");
@@ -191,7 +193,9 @@ public class BotInteraction
 
     public async Task HandleBanCommand(SocketSlashCommand command)
     {
-        var playerId = command.Data.Options.FirstOrDefault(o => o.Name == "player-id")?.Value?.ToString();
+        var playerId = command.Data.Options.First(o => o.Name == "player-id")?.Value?.ToString();
+        string? reason = command.Data.Options.First(o => o.Name == "reason")?.Value?.ToString();
+        string? hours = command.Data.Options.First(o => o.Name == "hours")?.Value.ToString();
 
         if (playerId == null)
         {
@@ -199,7 +203,19 @@ public class BotInteraction
             return;
         }
 
-        await _webAPI.PlayerBan(playerId);
+        BanOptions options = new BanOptions();
+        options.reason = reason;
+
+        try
+        {
+            options.hours = int.Parse(hours);
+        }
+        catch
+        {
+            // nothing to do
+        }
+
+        await _webAPI.PlayerBan(playerId, options);
         await command.RespondAsync($"Player ({playerId}) banned");
     }
 }
