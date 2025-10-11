@@ -26,10 +26,8 @@ public class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Failed start: {e.Message}");
-            Debug.WriteLine(e);
-            Console.WriteLine("Press any key to exit");
-            Console.ReadLine();
+            File.WriteAllText("./crash_log.txt", e.ToString());
+            Environment.Exit(1);
         }
 
     }
@@ -59,7 +57,8 @@ public class Program
                 Console.WriteLine($"Failed to send event: {e.Message}");
                 Debug.WriteLine(e);
             }
-        };
+        }
+        ;
     }
 
 
